@@ -2,7 +2,7 @@ use super::primitives;
 use calyx::ir;
 use std::collections::HashMap;
 use std::rc::Rc;
-use serde::{Serialize, Serializer};
+use serde::{Serialize};
 /// Stores information for updates.
 #[derive(Clone, Debug)]
 pub struct Update {
@@ -17,36 +17,10 @@ pub struct Update {
     pub vars: HashMap<String, u64>,
 }
 
-// 1.
 #[derive(Serialize, Debug)]
 struct Cycle (HashMap<String, HashMap<String, u64>>);
 
-// //2. 
-// struct Cycle2{
-//     cycle: HashMap<ir::Id, HashMap<ir::Id, u64>>
-// }
 
-// impl <K1, <K2, V>> for Cycle2
-// where 
-//     K1: Serialize,
-//     K2: Serialize, 
-//     V: Serialize
-// {
-//     fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
-//     where
-//         S: Serializer,
-//     {
-//         let mut map1 = serializer.serialize_map(Some(self.len()))?;
-//         for (k, v) in self {
-//             let mut map2 = serializer.serialize_map(Some(self.len()))?;
-//             for (key, value) in v {
-//                 map2.serialize_entry(key, value)?;
-//             }
-//             map.serialize_entry(k, map2)?;
-//         }
-//         map.end()
-//     }
-// }
 /// The environment to interpret a Calyx program.
 #[derive(Clone, Debug)]
 pub struct Environment {
@@ -162,16 +136,6 @@ impl Environment {
 
     /// Outputs the cell state; TODO (write to a specified output in the future)
     pub fn cell_state(&self) {
-        // Check 1 works 
-        // let mut cyc = HashMap::new();
-        // cyc.insert("2nd".to_string(), 34);
-        // let mut cyc2 = HashMap::new();
-        // cyc2.insert("1st".to_string(), cyc);
-        // let init_cycle = Cycle{ cycle: cyc2};
-        // let serialized = serde_json::to_string(&init_cycle).unwrap();
-        // println!("serialized = {}", serialized);
-
-        // Try building struct 1. for self.map -1)
         let mut cyc1 : HashMap<String, HashMap<String, u64>> = HashMap::new();
         for (key, value) in &self.map {
             let mut cyc2 = HashMap::new();
@@ -180,16 +144,6 @@ impl Environment {
             }
             cyc1.insert(key.to_string(), cyc2);
         }
-
-        // Try building struct 1. for self.map -2)
-        // let state_str = self
-        //     .map
-        //     .iter()
-        //     .map(|(cell, ports)| { 
-        //         ports.iter().map(|()| )
-        //     })
-        //     .collect::<Vec<_>>()
-        //     .join("\n");
 
         let state_str = Cycle(cyc1);
         
