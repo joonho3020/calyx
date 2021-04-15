@@ -1,6 +1,7 @@
 use super::primitives;
 use calyx::ir;
 use std::collections::HashMap;
+use std::collections::BTreeMap;
 use std::rc::Rc;
 use serde::{Serialize};
 /// Stores information for updates.
@@ -17,9 +18,10 @@ pub struct Update {
     pub vars: HashMap<String, u64>,
 }
 
+// #[derive(Serialize, Debug)]
+// struct Cycle (HashMap<String, HashMap<String, u64>>);
 #[derive(Serialize, Debug)]
-struct Cycle (HashMap<String, HashMap<String, u64>>);
-
+struct Cycle (BTreeMap<String, BTreeMap<String, u64>>);
 
 /// The environment to interpret a Calyx program.
 #[derive(Clone, Debug)]
@@ -136,19 +138,30 @@ impl Environment {
 
     /// Outputs the cell state; TODO (write to a specified output in the future)
     pub fn cell_state(&self) {
-        let mut cyc1 : HashMap<String, HashMap<String, u64>> = HashMap::new();
+        let mut cyc1 : BTreeMap<String, BTreeMap<String, u64>> = BTreeMap::new();
         for (key, value) in &self.map {
-            let mut cyc2 = HashMap::new();
+            //println!("{}",key.to_string());
+            let mut cyc2 = BTreeMap::new();
             for (k,v) in value{
+                // println!("{}",k.to_string());
                 cyc2.insert(k.to_string(), *v);
             }
             cyc1.insert(key.to_string(), cyc2);
         }
 
         let state_str = Cycle(cyc1);
+
+
+
+        // for (key, value) in &cyc1 {
+        //     println!("{}", key);
+        //     for (k,v) in value{
+        //         println!("{}: {}", k, v);
+        //     }
+        // }
         
         let serialized = serde_json::to_string(&state_str).unwrap();
-        println!("serialized = {}", serialized);
+        println!("{}", serialized);
 
         // let state_str = self
         //     .map
