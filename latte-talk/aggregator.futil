@@ -1,0 +1,93 @@
+import "primitives/core.futil";
+import "primitives/memories/comb.futil";
+import "primitives/binary_operators.futil";
+
+component aggregator(in: 4) -> (out: 4) {
+  cells {
+    sum = std_reg(4);
+
+    cntr = std_reg(2);
+    cntr_add = std_add(2);
+    lt = std_lt(2);
+
+    add = std_add(4);
+    mul = std_mult_pipe(4);
+  }
+
+  wires {
+    group init {
+      sum.in = 4'd0;
+      sum.write_en = 1'd1;
+
+      cntr.in = 2'd0;
+      cntr.write_en = 1'd1;
+
+      init[done] = cntr.done;
+    }
+
+    group incr {
+      cntr_add.left = cntr.out;
+      cntr_add.right = 2'd1;
+      cntr.in = cntr_add.out;
+      cntr.write_en = 1'b1;
+
+      incr[done] = cntr.done;
+    }
+
+    comb group cond {
+      lt.left = cntr.out;
+      lt.right = 2'd3;
+    }
+
+    group mac {
+      add.left = sum.out;
+      add.right = in;
+      sum.in  = add.out;
+      sum.write_en = 1'b1;
+      mac[done] = sum.done;
+    }
+
+    out = sum.out;
+  }
+
+  control {
+    seq {
+      init;
+      while lt.out with cond {
+        par {
+          mac;
+          incr;
+        }
+      }
+    }
+  }
+}
+
+component main() -> () {
+  cells {
+    ss = aggregator();
+    @external mem = comb_mem_d1(4, 1, 1);
+  }
+
+  wires {
+    group run_ss {
+      ss.in = 4'd3;
+      ss.go = 1'd1;
+      run_ss[done] = ss.done;
+    }
+
+    group print_ss {
+      mem.addr0 = 1'b0;
+      mem.write_data = ss.out;
+      mem.write_en = 1'b1;
+      print_ss[done] = mem.done;
+    }
+  }
+
+  control {
+    seq {
+      run_ss;
+      print_ss;
+    }
+  }
+}
